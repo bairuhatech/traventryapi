@@ -87,16 +87,20 @@ app.get("/api/multy-transactions/:trcodestring", (req, res) => {
  * @return response()
  */
 app.get("/api/transactions-by-parent-acl-code/:parent_acl_code", (req, res) => {
-  // let sqlQuery = `SELECT * FROM transaction WHERE tr_code IN ('RC-IT-22M151036','AS-IT-22M151025','AS-IT-22M151024','AS-IT-22M151023')`;
-  let sqlQuery = `SELECT * FROM transaction  tx
+  try {
+    // let sqlQuery = `SELECT * FROM transaction WHERE tr_code IN ('RC-IT-22M151036','AS-IT-22M151025','AS-IT-22M151024','AS-IT-22M151023')`;
+    let sqlQuery = `SELECT * FROM transaction  tx
   LEFT  JOIN txn_matching txm
   ON tx.tr_code= txm.txnm_l_tr_code 
   WHERE tx.tr_code IN (SELECT tr_code FROM transaction WHERE tr_prnt_acl_code = '${req.params.parent_acl_code}' )`;
 
-  let query = conn.query(sqlQuery, (err, results) => {
-    if (err) throw err;
-    res.send(apiResponse(results));
-  });
+    let query = conn.query(sqlQuery, (err, results) => {
+      if (err) throw err;
+      res.send(apiResponse(results));
+    });
+  } catch (error) {
+    res.send(apiResponse(error));
+  }
 });
 
 /**
