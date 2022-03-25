@@ -10,6 +10,10 @@ parse application/json
 --------------------------------------------*/
 app.use(bodyParser.json());
 
+app.get("/", (req, res) => {
+  res.send(apiResponse({ data: "traventry api running version 1.0.0" }));
+});
+
 /*------------------------------------------
 --------------------------------------------
 Database Connection
