@@ -176,7 +176,8 @@ app.delete("/api/items/:id", (req, res) => {
  * @return response()
  */
 function apiResponse(results) {
-  return JSON.stringify({ status: 200, error: null, response: results });
+  // return JSON.stringify({ status: 200, error: null, response: results });
+  return { status: 200, error: null, response: results };
 }
 
 /*------------------------------------------
