@@ -86,6 +86,82 @@ app.get("/api/multy-transactions/:trcodestring", (req, res) => {
  *
  * @return response()
  */
+
+let getMatchingData = (resp) => {
+  let invoices = [];
+  let receipts = [];
+  let matchedInvoices = [];
+  let nonMatchedInvoices = [];
+  let receiptsIndexArr = [];
+  let invoiceIndexArr = [];
+  for (let index = 0; index < resp.length; index++) {
+    let trObj = resp[index];
+
+    if (trObj["tr_type"] === "RD") {
+      if (receiptsIndexArr.indexOf(trObj["tr_code"]) < 0) {
+        receiptsIndexArr.push(trObj["tr_code"]);
+        receipts.push({ tr_code: trObj["tr_code"], data: [trObj] });
+      } else {
+        // find the receipts index from receipts with tr_code
+        let indexOfObjInReceiptsArr = receipts
+          .map((obj) => {
+            return obj["tr_code"];
+          })
+          .indexOf(trObj["tr_code"]);
+        // then push the data to that array
+        receipts[indexOfObjInReceiptsArr]["data"].push(trObj);
+      }
+    } else if (trObj["tr_type"] === "AS") {
+      if (invoiceIndexArr.indexOf(trObj["tr_code"]) < 0) {
+        invoiceIndexArr.push(trObj["tr_code"]);
+        invoices.push({ tr_code: trObj["tr_code"], data: [trObj] });
+      } else {
+        // find the invoices index from invoices with tr_code
+        let indexOfObjInInvoicesrr = invoices
+          .map((obj) => {
+            return obj["tr_code"];
+          })
+          .indexOf(trObj["tr_code"]);
+        // then push the data to that array
+        invoices[indexOfObjInInvoicesrr]["data"].push(trObj);
+      }
+    }
+  }
+
+  for (
+    let indexInvoices = 0;
+    indexInvoices < invoices.length;
+    indexInvoices++
+  ) {
+    let invoiceObj = invoices[indexInvoices];
+    let invoiceTotalValue = 0;
+    let invoiceMatchedValue = 0;
+    let currentInvoice;
+    invoiceObj["data"].forEach((invoice) => {
+      currentInvoice = invoice;
+      invoiceTotalValue = parseFloat(invoice["tr_net"]);
+      invoiceMatchedValue =
+        parseFloat(invoiceMatchedValue) + parseFloat(invoice["txnm_amount"]);
+    });
+    if (invoiceTotalValue <= invoiceMatchedValue) {
+      matchedInvoices.push(currentInvoice);
+    } else {
+      nonMatchedInvoices.push(currentInvoice);
+    }
+  }
+
+  // console.log("invoices", invoices);
+  // console.log("receipts", receipts);
+  // console.log("matchedInvoices", matchedInvoices);
+  // console.log("nonMatchedInvoices", nonMatchedInvoices);
+  return {
+    invoices: invoices,
+    receipts: receipts,
+    matchedInvoices: matchedInvoices,
+    nonMatchedInvoices: nonMatchedInvoices,
+  };
+};
+
 app.get("/api/transactions-by-parent-acl-code/:parent_acl_code", (req, res) => {
   try {
     // let sqlQuery = `SELECT * FROM transaction WHERE tr_code IN ('RC-IT-22M151036','AS-IT-22M151025','AS-IT-22M151024','AS-IT-22M151023')`;
@@ -96,7 +172,13 @@ app.get("/api/transactions-by-parent-acl-code/:parent_acl_code", (req, res) => {
 
     let query = conn.query(sqlQuery, (err, results) => {
       if (err) throw err;
-      res.send(apiResponse(results));
+      let resultObj = {
+        invoices: [],
+        reciepts: [],
+        matchedInvoices: [],
+        nonMatchedInvoices: [],
+      };
+      res.send(apiResponse(getMatchingData(results)));
     });
   } catch (error) {
     res.send(apiResponse(error));
