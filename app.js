@@ -165,10 +165,18 @@ let getMatchingData = (resp) => {
 app.get("/api/transactions-by-parent-acl-code/:parent_acl_code", (req, res) => {
   try {
     // let sqlQuery = `SELECT * FROM transaction WHERE tr_code IN ('RC-IT-22M151036','AS-IT-22M151025','AS-IT-22M151024','AS-IT-22M151023')`;
-    let sqlQuery = `SELECT * FROM transaction  tx
-  LEFT  JOIN txn_matching txm
-  ON tx.tr_code= txm.txnm_l_tr_code 
-  WHERE tx.tr_code IN (SELECT tr_code FROM transaction WHERE tr_prnt_acl_code = '${req.params.parent_acl_code}' )`;
+
+    let sqlQuery = `select tx.tr_code, tx.tr_type,tx.tr_prnt_acl_code, tx.tr_date,tx.tr_net,tx.status as txstatus,
+    txmeta.tr_code as txmtrcode,txmeta.trm_name,txmeta.trm_tkt, txmeta.trm_naration,txmeta.trm_ser_type,txmeta.status as txmstatus,
+    txcrdr.tr_code as txcrdrtrcode, txcrdr.acl_code,txcrdr.trcd_amt,txcrdr.status as txcrdrstatus,
+    acclgr.acl_code as acclgraclcode,acclgr.acl_name,
+    txm.*
+    from transaction tx 
+    left join txn_matching txm on tx.tr_code= txm.txnm_l_tr_code 
+    inner join transaction_meta txmeta on tx.tr_code = txmeta.tr_code 
+    inner join transaction_cr_dr txcrdr on tx.tr_code = txcrdr.tr_code and acl_code = '${req.params.parent_acl_code}'
+    inner join account_ledger acclgr on acclgr.acl_code = txcrdr.acl_code
+    WHERE tx.tr_code IN (SELECT tr_code FROM transaction WHERE tr_prnt_acl_code = '${req.params.parent_acl_code}' )`;
 
     let query = conn.query(sqlQuery, (err, results) => {
       if (err) throw err;
